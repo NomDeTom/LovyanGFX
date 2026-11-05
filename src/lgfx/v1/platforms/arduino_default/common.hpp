@@ -30,6 +30,13 @@ Contributors:
 #include <Arduino.h>
 #include <SPI.h>
 
+// Optional per-host override supplied by the platform (framework-portduino on
+// Portduino). A platform without it leaves the weak symbol null and the default
+// SPI object below is used, so this does not change any existing target.
+#if defined (__GNUC__) || defined (__clang__)
+extern "C" SPIClass* lgfx_get_spi_instance(int) __attribute__((weak));
+#endif
+
 namespace lgfx
 {
  inline namespace v1
@@ -49,12 +56,11 @@ namespace lgfx
     if (spi_host == 1) { return &SPI1; }
  #endif
 #endif
-#if defined (PORTDUINO_LINUX_HARDWARE) && defined (LGFX_PORTDUINO_PER_HOST_SPI)
-    return HardwareSPI::getInstance(spi_host);
-#else
+#if defined (__GNUC__) || defined (__clang__)
+    if (lgfx_get_spi_instance) { return lgfx_get_spi_instance(spi_host); }
+#endif
     (void)spi_host;
     return &SPI;
-#endif
   }
 
   /// SPI_MODE0~3 の実値は環境依存のため、spi_mode の生値を SPISettings に渡さず変換する。
