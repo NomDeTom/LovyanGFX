@@ -49,8 +49,12 @@ namespace lgfx
     if (spi_host == 1) { return &SPI1; }
  #endif
 #endif
+#if defined (PORTDUINO_LINUX_HARDWARE) && defined (LGFX_PORTDUINO_PER_HOST_SPI)
+    return HardwareSPI::getInstance(spi_host);
+#else
     (void)spi_host;
     return &SPI;
+#endif
   }
 
   /// SPI_MODE0~3 の実値は環境依存のため、spi_mode の生値を SPISettings に渡さず変換する。
