@@ -146,7 +146,7 @@ namespace lgfx
   void Bus_SPI::writePixels(pixelcopy_t* param, uint32_t length)
   {
     const uint8_t dst_bytes = param->dst_bits >> 3;
-#if defined(LGFX_PORTDUINO_PER_HOST_SPI)
+#if defined(__linux__) || defined(LGFX_PORTDUINO_PER_HOST_SPI)
     // Portduino spidev is configured with a 230400-byte buffer. Send as much
     // as fits in one request instead of the MCU-oriented 12/16-pixel chunks:
     // the LVGL draw buffer (28800 pixels) fits in one 18-bit transfer.
