@@ -170,10 +170,18 @@ namespace lgfx
   {
     void setColorDepth_impl(color_depth_t depth) override
     {
+#if defined(__linux__)
+      // The 4-line SPI interface accepts RGB565 (COLMOD 0x55); allow it on
+      // Portduino/native Linux when the display config asks for 16 bpp.
+      _write_depth = (((int)depth & color_depth_t::bit_mask) > 16)
+                    ? rgb888_3Byte
+                    : rgb565_2Byte;
+#else
       _write_depth = (((int)depth & color_depth_t::bit_mask) > 16
                     || (_bus && _bus->busType() == bus_spi))
                     ? rgb888_3Byte
                     : rgb565_2Byte;
+#endif
 
       _read_depth = rgb888_3Byte;
     }
