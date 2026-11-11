@@ -15,6 +15,9 @@ Contributors:
  [mongonta0716](https://github.com/mongonta0716)
  [tobozo](https://github.com/tobozo)
 /----------------------------------------------------------------------------*/
+// lgfx_borrow_spiclass() is declared weak only inside LovyanGFX's own translation units.
+#define LGFX_V1_IMPLEMENTATION
+
 #if defined (ESP_PLATFORM)
 #elif defined (ESP8266)
 #elif defined (__SAMD21__) || defined(__SAMD21G18A__) || defined(__SAMD21J18A__) || defined(__SAMD21E17A__) || defined(__SAMD21E18A__)
@@ -76,20 +79,24 @@ namespace lgfx
 
     /// ピン割り当ては Arduino の SPI ライブラリが持つ既定に従う。
     static SPIClass* _spi_instance = nullptr;
+    /// Lent by the application through lgfx_borrow_spiclass(): not begun or ended here.
+    static bool _spi_borrowed = false;
 
     cpp::result<void, error_t> init(int spi_host, int spi_sclk, int spi_miso, int spi_mosi)
     {
       if (spi_host < 0) { return soft_spi_init(spi_host, spi_sclk, spi_miso, spi_mosi); }
-      _spi_instance = getSPIInstance(spi_host);
-      _spi_instance->begin();
+      _spi_instance = getSPIInstance(spi_host, _spi_borrowed);
+      if (_spi_instance == nullptr) { _spi_borrowed = false; return cpp::fail(error_t::invalid_arg); }
+      if (!_spi_borrowed) { _spi_instance->begin(); }
       return {};
     }
     void release(int spi_host)
     {
       if (spi_host < 0) { soft_spi_release(spi_host); return; }
       if (_spi_instance == nullptr) { return; }
-      _spi_instance->end();
+      if (!_spi_borrowed) { _spi_instance->end(); }
       _spi_instance = nullptr;
+      _spi_borrowed = false;
     }
     void beginTransaction(int spi_host, uint32_t freq, int spi_mode)
     {

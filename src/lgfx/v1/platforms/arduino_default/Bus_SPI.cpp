@@ -15,6 +15,9 @@ Contributors:
  [mongonta0716](https://github.com/mongonta0716)
  [tobozo](https://github.com/tobozo)
 /----------------------------------------------------------------------------*/
+// lgfx_borrow_spiclass() is declared weak only inside LovyanGFX's own translation units.
+#define LGFX_V1_IMPLEMENTATION
+
 #if defined (ESP_PLATFORM)
 #elif defined (ESP8266)
 #elif defined (__SAMD21__) || defined(__SAMD21G18A__) || defined(__SAMD21J18A__) || defined(__SAMD21E17A__) || defined(__SAMD21E18A__)
@@ -50,16 +53,18 @@ namespace lgfx
   {
     dc_h();
     pinMode(_cfg.pin_dc, pin_mode_t::output);
-    spi = getSPIInstance(_cfg.spi_host);
-    spi->begin();
+    spi = getSPIInstance(_cfg.spi_host, _spi_borrowed);
+    if (spi == nullptr) { _spi_borrowed = false; return false; }
+    if (!_spi_borrowed) { spi->begin(); }
     return true;
   }
 
   void Bus_SPI::release(void)
   {
     if (spi == nullptr) { return; }
-    spi->end();
+    if (!_spi_borrowed) { spi->end(); }
     spi = nullptr;
+    _spi_borrowed = false;
   }
 
 
